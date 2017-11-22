@@ -1,0 +1,7 @@
+packrat/lib*/
+packrat/bundles/
+packrat/src/
+rsconnect/
+.Rproj.user
+*.Rproj
+.Rhistory
