@@ -24,30 +24,37 @@ vaf <- function(p, cnt, cnh, nt, nh) {
 shinyServer(function(input, output) {
 
     output$minor <- renderUI({
-        
+
         # GENERATE U.I. FOR MINOR ALLELE COPY NUMBER STATE
         numericInput("minor", "Minor allele", min(input$major, input$minor),
                      min = 0, max = input$major, step = 1)
     })
-    
+
     output$distPlot <- renderPlot({
-        
+
         # Process input values
         major.cn <- input$major
         minor.cn <- input$minor
-        
-        nhet <- round(input$total * input$hetfrac, 0)
-        nhom <- input$total - nhet
-        purity_depth <- input$purity * input$depth
-        impurities <- input$depth - purity_depth
-        x <- c(
-            rbeta(nhet,
-                  rpois(nhet, purity_depth/2),
-                  rpois(nhet, purity_depth/2 + impurities)),
-            rbeta(nhom,
-                  rpois(nhom, purity_depth),
-                  rpois(nhom, 0 + impurities)))
-        
+        total.cn <- major.cn + minor.cn
+        host.cn <- as.numeric(input$hostcn)
+
+        grid<-expand.grid(host = 0:input$hostcn, tumour = 0:total.cn)
+        grid$vaf <- apply(grid, 1, function(r) {
+            vaf(input$purity, total.cn, host.cn, r[["tumour"]], r[["host"]])
+        })
+
+        if (input$type == "Germline") {
+            grid <- grid[grid$host>0 & grid$host <= host.cn, ]
+        }
+        else {
+            grid <- grid[grid$host==0 & grid$tumour > 0, ]
+        }
+
+        nvar <- input$total / nrow(grid)
+        x <- apply(grid, 1, function(r) {
+            rbeta(nvar, rpois(nvar, r[["vaf"]]*input$depth), rpois(nvar, (1-r[["vaf"]])*input$depth))
+        })
+
         # draw the histogram with the specified number of bins
         hist(x, breaks = input$bins, xlim = c(0, 1), freq = FALSE, col = 'darkgray', border = 'white')
     })
