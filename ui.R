@@ -36,18 +36,6 @@ shinyUI(fluidPage(
                         "Sample Purity",
                         min = 0, max = 1, value = 0.7, step = 0.01, round = 2),
 
-            # FALSE POSITIVES / FALSE NEGATIVES
-            splitLayout(
-                cellWidths = c("50%", "50%"),
-                cellArgs = list(style = "padding: 6px"),
-                sliderInput("fpos",
-                            "False Positives",
-                            min = 0, max = 0.1, value = 0.01, step = 0.01, round = 2),
-                sliderInput("fneg",
-                            "False Negatives",
-                            min = 0, max = 0.1, value = 0.01, step = 0.01, round = 2)
-            ),
-
             # NUMBER OF BINS IN HISTOGRAM
             sliderInput("bins",
                         "Number of bins:",
@@ -80,7 +68,7 @@ shinyUI(fluidPage(
             ),
 
             # JUST PLOT HISTOGRAM
-            plotOutput("distPlot", hover = hoverOpts("plot_hover", delay=10)),
+            plotOutput("distPlot"),
             
             # DISPLAY HOVER INFO
             tableOutput("grid")

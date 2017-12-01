@@ -76,7 +76,7 @@ shinyServer(function(input, output) {
         req(input$major, input$minor, input$purity, input$total)
         grid <- grid()
     
-        nvar <- input$total / nrow(grid)
+        nvar <- input$total
         
         heights <- vector("numeric", nrow(grid))
         
@@ -89,40 +89,29 @@ shinyServer(function(input, output) {
 
         x <- unlist(apply(grid, 1, function(r) {
             nv <- round(nvar * r[["heights"]], 0)
-            fnr <- input$fneg
-            fpr <- input$fpos
-            rbeta(nv, rpois(nv, (fpr + r[["vaf"]])*input$depth), rpois(nv, (fnr + 1 - r[["vaf"]])*input$depth))
+            variantReads <- r[["vaf"]] * input$depth
+            referenceReads <- (1 - r[["vaf"]]) * input$depth
+            rbeta(nv, 1 + variantReads, 1 + referenceReads)
         }))
         
         # draw the histogram with the specified number of bins
-        hist(x, breaks = input$bins, xlim = c(0, 1), freq = TRUE, col = 'darkgray', border = 'white')
+        hist(x, breaks = seq(0, 1, length.out = input$bins),
+             xlim = c(0, 1), freq = TRUE, col = 'darkgray', border = 'white')
         segments(grid$vaf, 0, grid$vaf, -1, lwd = 4, col = "slateblue3")
     })
     
     output$grid <- renderTable({
-        # x_str <- function(e) {
-        #     if(is.null(e)) return("out of bounds\n")
-        #     paste0(round(e$x, 2), "\n")
-        # }
-        # 
-        # paste0("cursor position=", x_str(input$plot_hover))
         grid <- grid()
         heights <- vector("numeric", nrow(grid))
         
-        for (i in 1:nrow(grid)) {
-            heights[i] <- input[[paste0("Peak", i)]]
+        if(nrow(grid)>0) {
+            for (i in 1:nrow(grid)) {
+                heights[i] <- input[[paste0("Peak", i)]]
+            }
+            
+            heights <- heights / sum(heights)
+            grid$heights <- heights
         }
-        
-        heights <- heights / sum(heights)
-        grid$heights <- heights
         grid
     })
 })
-
-vafhist <- function(nvar, vafs, depth, heights) {
-    stopifnot(length(vafs) == length(heights))
-    unlist(sapply(1:length(vafs), function(i) {
-        nv <- round(nvar*heights[i], 0)
-        rbeta(nv, rpois(nv, vafs[i] * depth), rpois(nv, max(0.001, (1-vafs[i])) * depth))
-    }))
-}
